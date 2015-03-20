@@ -9,19 +9,20 @@ using Kompetens.Models;
 namespace Kompetens.Controllers
 {
     [RoutePrefix("searchcontroller")]
-    public class MovieController : ApiController
+    public class SearchController : ApiController
     {
         [HttpGet]
         [Route("")]
-        public IHttpActionResult SearchMovie(string q)
+        public IHttpActionResult Search(string q)
         {
 
             var data = WebApiConfig.GraphClient.Cypher
-               .Match("(m:Movie)")
-               .Where("m.title =~ {title}")
-               .WithParam("title", "(?i).*" + q + ".*")
-               .Return<Movie>("m")
-               .Results.ToList();
+               .Match("(n)")
+                //.Where("m.name =~ {name}")
+                //.WithParam("name", "(?i).*" + q + ".*")
+                .Return(n => new { label = n.Labels(), name = n.As<Project>().name})
+                
+                .Results;
 
             var data2 = WebApiConfig.GraphClient.Cypher
                 .Match("(a)-[r]-(b)")
@@ -29,8 +30,8 @@ namespace Kompetens.Controllers
                 .WithParam("title", "(?i).*" + q + ".*")
                 .ReturnDistinct(r => new { Type = r.Type() })
                 .Results;
-
             return Ok(data.Select(c => new { movie = c }));
+            //return Ok(data.Select(c => new { movie = c }));
         }
     }
 }
