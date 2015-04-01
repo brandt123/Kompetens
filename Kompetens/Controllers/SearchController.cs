@@ -15,23 +15,24 @@ namespace Kompetens.Controllers
         [Route("")]
         public IHttpActionResult Search(string q)
         {
-
-            var data = WebApiConfig.GraphClient.Cypher
+            var data3 = WebApiConfig.GraphClient.Cypher
                .Match("(n)")
                 //.Where("m.name =~ {name}")
                 //.WithParam("name", "(?i).*" + q + ".*")
-                .Return(n => new { label = n.Labels(), name = n.As<Project>().name})
-                
+                .Return(n => new { name = n.As<Project>().name, label = n.Labels() })
                 .Results;
 
+            /* ANVÄNDS INTE, MEN SPARA ÄNDÅ!
             var data2 = WebApiConfig.GraphClient.Cypher
                 .Match("(a)-[r]-(b)")
                 .Where("a.title =~ {title}")
                 .WithParam("title", "(?i).*" + q + ".*")
                 .ReturnDistinct(r => new { Type = r.Type() })
                 .Results;
-            return Ok(data.Select(c => new { movie = c }));
-            //return Ok(data.Select(c => new { movie = c }));
+             */
+
+            return Ok(data3);
+            
         }
     }
 }

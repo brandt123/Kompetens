@@ -1,10 +1,15 @@
 ﻿@{
     ViewBag.Title = "Home Page";
 }
+
+<div class="col-sm-6 films">
+
+</div>
+
 <div class="row">
     <form role="search" class="navbar-form" id="search">
-        <div class="form-group">
-            <input type="text" value="Matrix" placeholder="Search for Movie Title" class="form-control" name="search">
+        <div class="col-sm-6 films">
+            <input class="typeahead form-control" name="films" type="text" autocomplete="off" value="" />
         </div>
         <button class="btn btn-default" type="submit">Search</button>
     </form>
@@ -33,7 +38,32 @@
     </table>
 </div>
 
+
+
 <script type="text/javascript">
+   
+
+    var names = new Bloodhound({
+        datumTokenizer: function (d) { return Bloodhound.tokenizers.whitespace(d.name); },
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        prefetch: {
+            url: '/searchcontroller?q=ny',
+            ttl: 0 //Amount of time the data is cached (1 day)
+        }
+    });
+    // initialize the bloodhound suggestion engine
+    names.initialize();
+    console.log(names);
+
+    // instantiate the typeahead UI
+    $('.films .typeahead').typeahead(null, {
+        displayKey: 'name',
+        source: names.ttAdapter()
+    });
+
+
+    
+
     $(function () {
         function search() {
             var query = $("#search").find("input[name=search]").val();
@@ -46,16 +76,16 @@
                         data.forEach(function (row) {
                             
                             var movie = row.movie;
-                            if (movie.label == "Project") {
-                                $("<tr><td class='movie'>" + movie.name + "</td><td>" + movie.label + "</td><td>").appendTo(p)
+                            if (row.label == "Project") {
+                                $("<tr><td class='movie'>" + row.name + "</td><td>" + row.label + "</td><td>").appendTo(p)
                                         .click(function () { showMovie($(this).find("td.movie").text()); })
                             }
-                            if (movie.label == "Employee") {
-                                $("<tr><td class='movie'>" + movie.name + "</td><td>" + movie.label + "</td><td>").appendTo(e)
+                            if (row.label == "Employee") {
+                                $("<tr><td class='movie'>" + row.name + "</td><td>" + row.label + "</td><td>").appendTo(e)
                                         .click(function () { showMovie($(this).find("td.movie").text()); })
                             }
                         });
-                        showMovie(data[0].movie.title);
+                        
                     }, "json");
             return false;
         }
