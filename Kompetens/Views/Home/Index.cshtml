@@ -2,6 +2,8 @@
     ViewBag.Title = "Home Page";
 }
 
+
+
 <div class="col-sm-6 films">
 
 </div>
@@ -37,7 +39,7 @@
         <tbody></tbody>
     </table>
 </div>
-
+    
 
 
 <script type="text/javascript">
@@ -53,7 +55,6 @@
     });
     // initialize the bloodhound suggestion engine
     names.initialize();
-    console.log(names);
 
     // instantiate the typeahead UI
     $('.films .typeahead').typeahead(null, {
@@ -63,7 +64,7 @@
 
 
     
-
+    
     $(function () {
         function search() {
             var query = $("#search").find("input[name=search]").val();
@@ -93,4 +94,101 @@
         $("#search").submit(search);
         search();
     })
+    
+</script>
+
+<script type="text/javascript">
+    // The query
+    var query = {
+        "statements": [{
+            "statement": "MATCH path = (n)-[r]->(m) RETURN path",
+            "resultDataContents": ["graph", "row"]
+        }]
+    };
+
+    var graphen;
+
+    //the helper function provided by neo4j documents
+    function idIndex(a, id) {
+        for (var i = 0; i < a.length; i++) {
+            if (a[i].id == id) return i;
+        }
+        return null;
+    }
+    // jQuery ajax call
+    var request = $.ajax({
+        type: "POST",
+        url: "http://localhost:7474/db/data/transaction/commit",
+        accepts: { json: "application/json" },
+        dataType: "json",
+        contentType: "application/json",
+        data: JSON.stringify(query),
+        //now pass a callback to success to do something with the data
+        success: function (data) {
+            var nodes = [], links = [];
+            // parsing the output of neo4j rest api
+            data.results[0].data.forEach(function (row) {
+                row.graph.nodes.forEach(function (n) {
+                    if (idIndex(nodes, n.id) == null) {
+                        nodes.push({ id: n.id, label: n.labels[0], title: n.properties.name });
+                    }
+                });
+                links = links.concat(row.graph.relationships.map(function (r) {
+                    // the neo4j documents has an error : replace start with source and end with target
+                    return { source: idIndex(nodes, r.startNode), target: idIndex(nodes, r.endNode), type: r.type };
+                }));
+            });
+            graphen = { nodes: nodes, links: links };
+            console.log(graphen);
+            // Now do something awesome with the graph!
+
+            var width = 800, height = 200;
+
+            var color = d3.scale.category20();
+
+            var force = d3.layout.force()
+                    .charge(-200).linkDistance(30).size([width, height]);
+
+            var svg = d3.select("#graph").append("svg")
+                    .attr("width", "100%").attr("height", "100%")
+                    .attr("pointer-events", "all");
+
+            //d3.json(graphen, function (error, graph) {
+               // if (error) return;
+
+                force.nodes(graphen.nodes).links(graphen.links).start();
+
+                var link = svg.selectAll(".link")
+                    .data(graphen.links)
+                  .enter().append("line")
+                    .attr("class", "link")
+                    .style("stroke-width", function (d) { return Math.sqrt(d.value); });
+
+                var node = svg.selectAll(".node")
+                    .data(graphen.nodes)
+                  .enter().append("circle")
+                    .attr("class", "node")
+                    .attr("r", 5)
+                    .style("fill", function (d) { return color(d.group); })
+                    .call(force.drag);
+
+                node.append("title")
+                    .text(function (d) { return d.name; });
+
+                force.on("tick", function () {
+                    link.attr("x1", function (d) { return d.source.x; })
+                        .attr("y1", function (d) { return d.source.y; })
+                        .attr("x2", function (d) { return d.target.x; })
+                        .attr("y2", function (d) { return d.target.y; });
+
+                    node.attr("cx", function (d) { return d.x; })
+                        .attr("cy", function (d) { return d.y; });
+                });
+
+            }
+
+        
+    })
+
+   
 </script>

@@ -34,5 +34,28 @@ namespace Kompetens.Controllers
             return Ok(data3);
             
         }
+
+       
+
+        [HttpGet]
+        [Route("GetNodes")]
+        public IHttpActionResult GetNodes() {
+
+            var nodes = new List<object>();
+            var rels = new List<object>();
+
+            nodes.Add(new { name = "Matrix", group = 1 });
+            nodes.Add(new { name = "Test", group = 2 });
+            rels.Add(new { source = 1, target = 0, value = 1 });
+
+
+            var data = WebApiConfig.GraphClient.Cypher
+               .Match("(n)")
+               .Return(n => new { name = n.As<Project>().name, label = n.Labels() })
+               .Results;
+            return Ok(new { nodes = nodes, links = rels });
+
+        
+        }
     }
 }
