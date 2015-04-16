@@ -41,8 +41,33 @@
                 </div>
 
                 <div class="form-group">
+                    @Html.Label("Kund", new { @class = "control-label col-md-5"})
+                    <div class="col-md-7">
+                        @{
+                            List<SelectListItem> listItem = new List<SelectListItem>();
+                        }
+                        @Html.DropDownListFor(m => m.KundNamn, listItem, new { id = "KundId", @class = "form-control" } )
+
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.Label("Beställare", new { @class = "control-label col-md-5" })
+                    <div class="col-md-7">
+                        @{
+                            List<SelectListItem> listItem2 = new List<SelectListItem>();
+                        }
+                        @Html.DropDownListFor(m => m.Bestallare, listItem2, new { id = "Bestallare", @class = "form-control" })
+
+                    </div>
+                </div>
+
+
+
+                <div class="form-group">
                     <div class="col-md-offset-5 col-md-7">
                         <input type="submit" value="Register" onclick="location.href='@Url.Action("Register", "Home")'" class="btn btn-default pull-right" />
+                        <a class="btn btn-primary btn-sm" onclick="showTitleModal()">Skapa ny kund</a>
 
                     </div>
                 </div>
@@ -51,4 +76,76 @@
          </div>
         
     }
+
+    <div id="addTitleModal">
+    </div><!-- /.modal -->
 </div>
+
+
+@section Scripts{
+
+    <script type="text/javascript">
+        function showTitleModal() {
+            $("#addTitleModal").load("@Url.Action("CreateTitleModal")");
+
+        }
+
+
+    </script>
+
+<script type="text/javascript">
+    // The query
+    var query = {
+        "statements": [{
+            "statement": "MATCH path = (n) RETURN path",
+            "resultDataContents": ["graph", "row"]
+        }]
+    };
+
+    var graphen;
+
+    //the helper function provided by neo4j documents
+    function idIndex(a, id) {
+        for (var i = 0; i < a.length; i++) {
+            if (a[i].id == id) return i;
+        }
+        return null;
+    }
+    // jQuery ajax call
+    var request = $.ajax({
+        type: "POST",
+        url: "http://localhost:7474/db/data/transaction/commit",
+        accepts: { json: "application/json" },
+        dataType: "json",
+        contentType: "application/json",
+        data: JSON.stringify(query),
+        //now pass a callback to success to do something with the data
+        success: function (data) {
+            var nodes = [], links = [];
+            // parsing the output of neo4j rest api
+            data.results[0].data.forEach(function (row) {
+                row.graph.nodes.forEach(function (n) {
+                    console.log(n.labels);
+                    if (idIndex(nodes, n.id) == null) {
+                        if (n.labels == "Kund") {
+                            $("#KundId").append($("<option>").text(n.properties.Namn).val(n.properties.Namn).attr('KundId', n.id));
+                        }
+                        if (n.labels == "Bestallare") {
+                            $("#Bestallare").append($("<option>").text(n.properties.Namn + ", " + n.properties.Foretag).val(n.properties.Namn).attr('Bestallare', n.id));
+                        }
+                        
+                        nodes.push({ id: n.id, label: n.labels[0], title: n.properties.name });
+                    }
+                });
+                links = links.concat(row.graph.relationships.map(function (r) {
+                    // the neo4j documents has an error : replace start with source and end with target
+                    return { source: idIndex(nodes, r.startNode), target: idIndex(nodes, r.endNode), type: r.type };
+                }));
+            });
+            graphen = { nodes: nodes, links: links };
+            //console.log(graphen);
+ 
+        }});
+</script>
+
+}

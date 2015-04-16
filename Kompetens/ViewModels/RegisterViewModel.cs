@@ -15,5 +15,17 @@ namespace Kompetens.ViewModels
         public string Solution { get; set; }
 
         public string Result { get; set; }
+
+        public string KundNamn { get; set; }
+
+        public string Bestallare { get; set; }
+    }
+
+    public class KundViewModel 
+    {
+        public string KundNamn { get; set; }
+
+        public string BestallareNamn { get; set; }
+    
     }
 }
